@@ -1,0 +1,22 @@
+{
+  "name": "live-balls",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Engin ÖRÜN <enginorun51@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/enginorun/live-balls",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "^1.7.9",
+    "semantic": "^2.4.1"
+  }
+}
