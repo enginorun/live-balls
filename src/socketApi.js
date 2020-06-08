@@ -4,24 +4,41 @@ const io = socketio();
 const socketApi = {};
 socketApi.io = io;
 
-const users = [];
+const users = {};
+const playerList = [];
 
 io.on('connection', (socket) => {
-    console.log("Bir kullanıcı bağlandı.")
 
     socket.on('newUser', (data) => {
         const defaultData = {
             id: socket.id,
-            position: {
-                x: 0,
-                y: 0
-            }
         };
-
         const userData = Object.assign(data, defaultData);
-        users.push(userData);
+        users[socket.id] = userData;
+        playerList.push(userData);
 
-        socket.broadcast.emit('newUser', userData);
+        socket.broadcast.emit('playerList', playerList);
+        socket.broadcast.emit('newUser', users[socket.id]);
+        socket.emit('initPlayers', users);
+        socket.emit('initPlayerList', playerList);
+
+        console.log(playerList);
+    });
+
+    socket.on('disconnect', () => {
+        delete users[socket.id];
+        // for (i = 0, len = playerList.length; i < len; i++) {
+        //     if(users[socket.id]["username"] == playerList[i]["username"]) {
+        //         delete playerList[i];
+        //     }
+        // }
+        socket.broadcast.emit('disUser', users[socket.id]);
+        console.log(playerList)
+    });
+
+    socket.on('newMessage', (data) => {
+        socket.broadcast.emit('newMessage', data);
+        console.log(data.username + " tarafından bir yeni mesaj gönderildi.");
     });
 })
 
