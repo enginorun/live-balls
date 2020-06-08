@@ -1,4 +1,4 @@
-app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFactory) => {
+app.controller('indexController', ['$scope', 'indexFactory', 'configFactory', ($scope, indexFactory, configFactory) => {
 
     $scope.messages = [];
     $scope.players = {};
@@ -44,82 +44,84 @@ app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFacto
         });
     }
 
-    function initSocket(username) {
-        indexFactory.connectSocket('http://localhost:3000', {
-            reconnectionAttempts: 3,
-            reconnectionDelay: 600
-        }).then((socket) => {
+    async function initSocket(username) {
+       try {
+           const socketUrl = await configFactory.getConfig();
 
-            socket.emit('newUser', { username })
+           const socket = await indexFactory.connectSocket(socketUrl.data.socketUrl, {
+               reconnectionAttempts: 3,
+               reconnectionDelay: 600
+           });
 
-            socket.on('initPlayers', (players) => {
+           socket.emit('newUser', { username })
+
+           socket.on('initPlayers', (players) => {
                $scope.players = players;
                $scope.$apply();
-            });
+           });
 
-            socket.on('initPlayerList', (playerList) => {
-                $scope.playerList2 = playerList;
-                $scope.$apply();
-            });
+           socket.on('initPlayerList', (playerList) => {
+               $scope.playerList2 = playerList;
+               $scope.$apply();
+           });
 
-            socket.on('playerList', (playerList) => {
-                $scope.playerList2 = playerList;
-                $scope.$apply();
-            });
+           socket.on('playerList', (playerList) => {
+               $scope.playerList2 = playerList;
+               $scope.$apply();
+           });
 
-            socket.on('newUser', (data) => {
-                console.log(data.username);
-                const messageData = {
-                    type: {
-                        code: 0, // SERVER or USER MESSAGE
-                        message: 1 // LOGIN or DIS Message
-                    }, // info by SERVER
-                    username: data.username
-                };
+           socket.on('newUser', (data) => {
+               console.log(data.username);
+               const messageData = {
+                   type: {
+                       code: 0, // SERVER or USER MESSAGE
+                       message: 1 // LOGIN or DIS Message
+                   }, // info by SERVER
+                   username: data.username
+               };
 
-                $scope.messages.push(messageData)
-                $scope.$apply()
-            });
+               $scope.messages.push(messageData)
+               $scope.$apply()
+           });
 
-            socket.on("newMessage", data => {
-                $scope.messages.push(data);
-                $scope.$apply()
-                scrollTop();
-            });
+           socket.on("newMessage", data => {
+               $scope.messages.push(data);
+               $scope.$apply()
+               scrollTop();
+           });
 
-            $scope.newMessage = () => {
-                let message = $scope.message;
+           $scope.newMessage = () => {
+               let message = $scope.message;
 
-                const messageData = {
-                    type: {
-                        code: 1, // SERVER or USER MESSAGE
-                    },
-                    username: username,
-                    text: message,
-                    id: socket.id
-                };
+               const messageData = {
+                   type: {
+                       code: 1, // SERVER or USER MESSAGE
+                   },
+                   username: username,
+                   text: message,
+                   id: socket.id
+               };
 
-                $scope.messages.push(messageData);
-                $scope.message = "";
-                socket.emit("newMessage", messageData);
-                scrollTop();
-            };
+               $scope.messages.push(messageData);
+               $scope.message = "";
+               socket.emit("newMessage", messageData);
+               scrollTop();
+           };
 
-            socket.on("disUser", (data) => {
-                const messageData = {
-                    type: {
-                        code: 0,
-                        message: 0
-                    },
-                    username: data.username
-                };
-                $scope.messages.push(messageData)
-                $scope.$apply()
-            });
-
-        }).catch((err) => {
-            console.log(err)
-        })
+           socket.on("disUser", (data) => {
+               const messageData = {
+                   type: {
+                       code: 0,
+                       message: 0
+                   },
+                   username: data.username
+               };
+               $scope.messages.push(messageData)
+               $scope.$apply()
+           });
+       }catch (e) {
+            console.log(e);
+       }
     }
 
 }]);
